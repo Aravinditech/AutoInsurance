@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Security.Claims;
 using System.IO;
+using Microsoft.AspNetCore.Authorization;
 
 namespace AutoInsurance.Controllers
 {
@@ -57,18 +58,19 @@ namespace AutoInsurance.Controllers
 
         [HttpPost]
         [Route("addDocument")]
-        public async Task<ActionResult> ConvertToBase64(int id, IFormFile document)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> ConvertToBase64([FromForm]uploadDoc doc)
         {
             try
             {
                 byte[] documentBytes;
                 using (var ms = new MemoryStream())
                 {
-                    document.CopyTo(ms);
+                    doc.document.CopyTo(ms);
                     documentBytes = ms.ToArray();
                 }
                 var documentBase64 = Convert.ToBase64String(documentBytes);
-                ClaimRegistration claim = _context.Claims.FirstOrDefault(e => e.Id == id);
+                ClaimRegistration claim = _context.Claims.FirstOrDefault(e => e.Id == doc.id);
                 if (claim == null)
                 {
                     return NotFound();
@@ -76,16 +78,17 @@ namespace AutoInsurance.Controllers
                 else
                 {
                     claim.Documents = documentBase64;
-                    claim.DocumentName = document.FileName;
+                    claim.DocumentName = doc.document.FileName;
                     _context.Entry(claim).State = EntityState.Modified;
                     await _context.SaveChangesAsync();
                 }
-                return Ok(new { id = id });
+                return Ok(new { id = doc.id });
             }
             catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }
+            //return Ok("doc");
         }
 
         [HttpPost]
@@ -106,7 +109,8 @@ namespace AutoInsurance.Controllers
             return Ok(new { id = id });
         }
 
-        [HttpPost]
+        [HttpGet]
+        
         [Route("returnFile")]
         public IActionResult ReturnFile(int id)
         {

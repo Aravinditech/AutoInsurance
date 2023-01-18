@@ -4,6 +4,11 @@ using System;
 
 namespace AutoInsurance.Models
 {
+    public class uploadDoc
+    {
+        public int id { get; set; }
+        public IFormFile document { get; set; }
+    }
     public class ClaimRegistration
     {
         [JsonIgnore]
